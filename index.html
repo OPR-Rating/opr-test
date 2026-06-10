@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>OPR-Rating Master</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F7F6F9; min-height: 100vh; }
+  .app { max-width: 480px; margin: 0 auto; background: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+  /* Header */
+  .header { background: #6C3483; color: white; padding: 14px 20px; display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+  .back-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0; }
+
+  /* Screens */
+  .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #fff; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+  .screen.hidden { transform: translateX(100%); }
+  .screen.active { transform: translateX(0); }
+  .screen-content { flex: 1; overflow-y: auto; padding: 16px; }
+
+  /* Home */
+  .home-hero { background: #F7F6F9; padding: 16px 16px 0; text-align: center; }
+  .screen-content.home-content { padding-top: 8px; }
+  .home-hero .hero-logo-panel { width: 100%; background: #6C3483; border-radius: 14px; padding: 22px 16px 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #fff; }
+  .home-hero .ball-row { display: flex; align-items: center; justify-content: center; gap: 22px; }
+  .home-hero .ball-pair { display: inline-flex; align-items: center; gap: 8px; }
+  .home-hero .pball { width: 38px; height: 38px; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+  .home-hero h2 { font-size: 24px; font-weight: 700; margin: 12px 0 4px; color: #fff; }
+  .home-hero p { font-size: 12px; opacity: 0.85; color: #fff; }
+  .opr-logo { font-size: 44px; margin-bottom: 10px; }
+  .btn-enter { width: 100%; padding: 18px; background: #F1C40F; color: #1a1a1a; border: none; border-radius: 14px; font-size: 18px; font-weight: 700; cursor: pointer; margin: 14px 0 12px; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.1s; }
+  .btn-enter:active { transform: scale(0.98); }
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .menu-btn { padding: 14px 8px; background: #fff; border: 1.5px solid #1a1a1a; border-radius: 12px; font-size: 13px; font-weight: 600; color: #1a1a1a; cursor: pointer; text-align: center; transition: all 0.15s; display: flex; align-items: center; justify-content: center; min-height: 52px; }
+  .menu-btn:active { background: #F5EEF8; transform: scale(0.97); }
+  .menu-btn .icon { font-size: 20px; display: block; margin-bottom: 3px; }
+  .menu-btn.full-width { grid-column: span 2; }
+  .ladders-group-title { font-size: 11px; font-weight: 700; color: #6C3483; text-transform: uppercase; letter-spacing: 0.6px; margin: 14px 0 8px; }
+  .ladders-group-title:first-child { margin-top: 0; }
+  .ladders-group-title.soon { color: #bbb; }
+  .ladders-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ladders-grid.one-col { grid-template-columns: 1fr; }
+  .menu-btn.soon { background: #fafafa; border: 1.5px dashed #ccc; color: #bbb; cursor: default; }
+  .menu-btn.soon:active { transform: none; background: #fafafa; }
+
+  /* Ladder */
+  .ladder-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 480px; }
+  .ladder-table th { background: #6C3483; color: white; padding: 8px 6px; text-align: left; font-size: 11px; font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
+  .ladder-table td { padding: 7px 6px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; text-align: left; }
+  .ladder-table tr:nth-child(even) td { background: #F5EEF8; }
+  .rank-badge { background: #6C3483; color: white; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .rank-1 { background: #F1C40F; color: #1a1a1a; }
+  .rank-2 { background: #BDC3C7; color: #1a1a1a; }
+  .rank-3 { background: #CD7F32; color: white; }
+
+  /* Profile */
+  .search-box { width: 100%; padding: 10px 14px; border: 1.5px solid #D7BDE2; border-radius: 10px; font-size: 15px; margin-bottom: 12px; outline: none; }
+  .search-box:focus { border-color: #6C3483; }
+  .player-list { list-style: none; }
+  .player-item { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .player-item:active { background: #F5EEF8; }
+  .player-avatar { width: 34px; height: 34px; border-radius: 50%; background: #6C3483; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .player-name { font-size: 14px; font-weight: 500; }
+  .player-gender { font-size: 11px; color: #888; }
+
+  /* Profile Card */
+  .profile-card { background: linear-gradient(135deg, #6C3483, #512E5F); color: white; border-radius: 16px; padding: 20px; margin-bottom: 12px; text-align: center; }
+  .profile-name { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .profile-rating { font-size: 48px; font-weight: 800; margin: 6px 0; line-height: 1; }
+  .profile-level { font-size: 18px; font-weight: 600; opacity: 0.95; margin-bottom: 4px; }
+  .profile-rank { font-size: 13px; opacity: 0.8; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat-card { background: #F5EEF8; border-radius: 10px; padding: 10px 6px; text-align: center; }
+  .stat-value { font-size: 20px; font-weight: 700; color: #6C3483; }
+  .stat-label { font-size: 10px; color: #888; margin-top: 2px; }
+
+  /* Match History */
+  .section-header { font-size: 12px; font-weight: 600; color: #6C3483; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 8px; }
+  .match-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; gap: 8px; font-size: 12px; }
+  .match-row:last-child { border-bottom: none; }
+  .win-badge { background: #1e8449; color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .loss-badge { background: #c0392b; color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .match-info { flex: 1; min-width: 0; }
+  .match-info .partners { font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .match-info .opponents { color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .match-meta { text-align: right; flex-shrink: 0; }
+  .match-meta .score { font-weight: 700; color: #6C3483; }
+  .match-meta .date { font-size: 10px; color: #aaa; }
+
+  /* Score Entry */
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .field label { font-size: 13px; color: #444; font-weight: 500; }
+  .field select, .field input[type=date] { width: 100%; padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 14px; background: #fff; color: #222; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  .team-card { background: #F5EEF8; border: 1.5px solid #D7BDE2; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .team-label { font-size: 12px; font-weight: 700; color: #6C3483; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .team-label span { background: #6C3483; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .set-table { width: 100%; border-collapse: collapse; }
+  .set-table th { font-size: 11px; color: #888; padding: 5px 4px; text-align: center; }
+  .set-table td { padding: 5px 4px; text-align: center; }
+  .set-table td:first-child { font-size: 11px; color: #555; text-align: left; }
+  .set-input { width: 50px; padding: 7px 4px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 16px; font-weight: 600; text-align: center; }
+  .set-input:focus { outline: none; border-color: #6C3483; }
+  .set-input.winner { border-color: #6C3483; background: #F5EEF8; }
+  .btn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+  .btn-primary { background: #6C3483; color: white; }
+  .btn-primary:active { transform: scale(0.98); background: #512E5F; }
+  .btn-secondary { background: #f0f2f5; color: #444; }
+  .btn-success { background: #1e8449; color: white; }
+  .result-card { border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .result-card.winner { background: #F5EEF8; border: 2px solid #6C3483; }
+  .result-card.loser { background: #f8f9fb; border: 1px solid #e0e0e0; }
+  .result-names { font-size: 13px; font-weight: 600; }
+  .result-sets { font-size: 24px; font-weight: 800; color: #6C3483; }
+  .result-games { font-size: 11px; color: #888; }
+  .winner-label { font-size: 10px; font-weight: 700; color: #6C3483; text-transform: uppercase; margin-bottom: 2px; }
+  .nav-row { display: flex; gap: 8px; margin-top: 8px; }
+  .nav-row .btn { flex: 1; margin-top: 0; }
+  .error-msg { color: #c0392b; font-size: 12px; background: #fdf2f2; border: 1px solid #f5c6c6; border-radius: 8px; padding: 8px 10px; display: none; margin-bottom: 8px; }
+  .step-indicator { display: flex; justify-content: center; gap: 8px; padding: 8px 0; }
+  .step-dot { width: 7px; height: 7px; border-radius: 50%; background: #d0d0d0; transition: background 0.2s; }
+  .step-dot.active { background: #6C3483; }
+  .step-dot.done { background: #6C3483; opacity: 0.4; }
+  .success-icon { text-align: center; font-size: 52px; margin: 20px 0 10px; }
+
+  /* Recent matches */
+  .recent-title { font-size: 12px; font-weight: 600; color: #6C3483; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 8px; }
+  .recent-item { background: #fff; border: 1px solid #D7BDE2; border-radius: 9px; padding: 6px 10px; margin-bottom: 6px; font-size: 12px; }
+  .recent-item .match-header { display: flex; justify-content: center; gap: 10px; margin-bottom: 1px; }
+  .recent-item .match-date { color: #888; font-size: 11px; }
+  .recent-item .match-type { color: #6C3483; font-weight: 600; font-size: 11px; }
+  .recent-item .match-teams { color: #333; text-align: center; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* About */
+  .about-section { margin-bottom: 20px; }
+  .about-section h3 { font-size: 15px; font-weight: 700; color: #6C3483; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #D7BDE2; }
+  .about-section p { font-size: 13px; color: #444; line-height: 1.6; margin-bottom: 8px; }
+  .about-badge { background: #6C3483; color: white; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-block; margin: 4px 4px 4px 0; }
+  .about-hero { background: linear-gradient(135deg, #6C3483, #512E5F); color: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; }
+  .about-hero h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .about-hero p { font-size: 12px; opacity: 0.85; }
+  .copyright { font-size: 11px; color: #aaa; text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; }
+
+  /* Tournament */
+  .tournament-item { background: #F5EEF8; border: 1.5px solid #D7BDE2; border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer; }
+  .tournament-item:active { background: #D7BDE2; }
+  .tournament-name { font-size: 15px; font-weight: 700; color: #6C3483; margin-bottom: 4px; }
+  .tournament-date { font-size: 12px; color: #888; }
+  .tournament-type { font-size: 11px; font-weight: 600; color: white; background: #6C3483; border-radius: 4px; padding: 2px 8px; display: inline-block; margin-top: 4px; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 40px 20px; color: #888; font-size: 13px; }
+  .loading-spinner { font-size: 28px; animation: spin 1s linear infinite; display: block; margin-bottom: 10px; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .empty-state { text-align: center; padding: 40px 20px; color: #888; }
+  .empty-state .icon { font-size: 44px; margin-bottom: 10px; }
+  .player-modal { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.2); z-index: 1000; max-height: 70vh; display: flex; flex-direction: column; }
+  .player-modal-header { padding: 16px 16px 8px; border-bottom: 1px solid #eee; }
+  .player-modal-title { font-size: 14px; font-weight: 700; color: #6C3483; margin-bottom: 8px; }
+  .player-modal-search { width: 100%; padding: 10px 12px; border: 1.5px solid #D7BDE2; border-radius: 10px; font-size: 16px; outline: none; }
+  .player-modal-search:focus { border-color: #6C3483; }
+  .player-modal-list { overflow-y: auto; flex: 1; }
+  .player-modal-item { padding: 12px 16px; border-bottom: 1px solid #f5f5f5; font-size: 15px; cursor: pointer; }
+  .player-modal-item:active { background: #F5EEF8; }
+  .player-modal-cancel { padding: 14px; text-align: center; font-size: 15px; color: #888; cursor: pointer; border-top: 1px solid #eee; }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 999; }
+  .player-display { width: 100%; padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 14px; background: white; cursor: pointer; text-align: left; color: #222; display: flex; justify-content: space-between; align-items: center; }
+  .player-display.selected { border-color: #6C3483; background: #F5EEF8; color: #6C3483; font-weight: 600; }
+  .player-display .arrow { color: #888; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HOME -->
+  <div class="screen active" id="homeScreen">
+    <div class="home-hero">
+      <div class="hero-logo-panel">
+        <div class="ball-row">
+          <span class="ball-pair"><svg class="pball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bg1" cx="38%" cy="33%" r="75%"><stop offset="0%" stop-color="#eaff66"/><stop offset="55%" stop-color="#c4e000"/><stop offset="100%" stop-color="#8fb500"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bg1)" stroke="#7da300" stroke-width="1"/><path d="M18 18 Q50 50 18 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><path d="M82 18 Q50 50 82 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><ellipse cx="40" cy="32" rx="14" ry="9" fill="rgba(255,255,255,0.35)"/></svg><svg class="pball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bg2" cx="38%" cy="33%" r="75%"><stop offset="0%" stop-color="#eaff66"/><stop offset="55%" stop-color="#c4e000"/><stop offset="100%" stop-color="#8fb500"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bg2)" stroke="#7da300" stroke-width="1"/><path d="M18 18 Q50 50 18 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><path d="M82 18 Q50 50 82 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><ellipse cx="40" cy="32" rx="14" ry="9" fill="rgba(255,255,255,0.35)"/></svg></span>
+          <span class="ball-pair"><svg class="pball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bg3" cx="38%" cy="33%" r="75%"><stop offset="0%" stop-color="#eaff66"/><stop offset="55%" stop-color="#c4e000"/><stop offset="100%" stop-color="#8fb500"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bg3)" stroke="#7da300" stroke-width="1"/><path d="M18 18 Q50 50 18 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><path d="M82 18 Q50 50 82 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><ellipse cx="40" cy="32" rx="14" ry="9" fill="rgba(255,255,255,0.35)"/></svg><svg class="pball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bg4" cx="38%" cy="33%" r="75%"><stop offset="0%" stop-color="#eaff66"/><stop offset="55%" stop-color="#c4e000"/><stop offset="100%" stop-color="#8fb500"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bg4)" stroke="#7da300" stroke-width="1"/><path d="M18 18 Q50 50 18 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><path d="M82 18 Q50 50 82 82" fill="none" stroke="#fbfff0" stroke-width="4" stroke-linecap="round"/><ellipse cx="40" cy="32" rx="14" ry="9" fill="rgba(255,255,255,0.35)"/></svg></span>
+        </div>
+        <h2>OPR-Rating</h2>
+        <p>Open Padel Rating System</p>
+      </div>
+    </div>
+    <div class="screen-content home-content">
+      <button class="btn-enter" onclick="showScreen('entryScreen')">✚ Enter Match Score</button>
+      <div class="menu-grid">
+        <button class="menu-btn" onclick="showScreen('laddersScreen')">Ladders</button>
+        <button class="menu-btn" onclick="showProfileSearch()">Member Profile</button>
+        <button class="menu-btn" onclick="showScreen('tournamentScreen')">Tournaments</button>
+        <button class="menu-btn" onclick="showScreen('aboutScreen')">About OPR</button>
+      </div>
+      <div style="background:#fff;color:#1a1a1a;border:1.5px solid #1a1a1a;border-radius:10px;padding:8px 12px;margin:22px 0 10px;font-size:13px;font-weight:700;letter-spacing:0.5px;text-align:center;">Recent Matches</div>
+      <div id="homeRecentList" style="max-height:420px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:2px;"><div style="color:#888;font-size:12px;">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- LADDERS MENU -->
+  <div class="screen hidden" id="laddersScreen">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">&#8592;</button>
+      <h1>Ladders</h1>
+    </div>
+    <div class="screen-content">
+      <div class="ladders-group-title">Singles Ladders</div>
+      <div class="ladders-grid">
+        <button class="menu-btn" onclick="loadLadder('mens','Mens Ladder')">Men's Ladder</button>
+        <button class="menu-btn" onclick="loadLadder('ladies','Ladies Ladder')">Ladies Ladder</button>
+      </div>
+      <div class="ladders-group-title">Doubles Ladders</div>
+      <div class="ladders-grid">
+        <button class="menu-btn" onclick="loadLadder('mensdoubles','Mens Doubles Rating')">Men's Doubles</button>
+        <button class="menu-btn" onclick="loadLadder('ladiesdoubles','Ladies Doubles Rating')">Ladies Doubles</button>
+        <button class="menu-btn" onclick="loadLadder('mixed','Mixed Doubles Rating')">Mixed Doubles</button>
+        <button class="menu-btn" onclick="loadLadder('allsorts','All Sorts Rating')">All Sorts</button>
+      </div>
+      <div class="ladders-group-title">Universal</div>
+      <div class="ladders-grid one-col">
+        <button class="menu-btn" onclick="loadLadder('universal','Universal Rating')">Universal Ladder</button>
+      </div>
+      <div class="ladders-group-title soon">Coming soon</div>
+      <div class="ladders-grid">
+        <button class="menu-btn soon" disabled>Performance</button>
+        <button class="menu-btn soon" disabled>Star Performer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LADDER -->
+  <div class="screen hidden" id="ladderScreen">
+    <div class="header">
+      <button class="back-btn" onclick="showScreen('laddersScreen')">&#8592;</button>
+      <h1 id="ladderTitle">Ladder</h1>
+    </div>
+    <div class="screen-content" style="padding:0;overflow-x:auto;">
+      <div id="ladderContent" class="loading"><span class="loading-spinner">⏳</span>Loading...</div>
+    </div>
+  </div>
+
+  <!-- PROFILE SEARCH -->
+  <div class="screen hidden" id="profileSearchScreen">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">&#8592;</button>
+      <h1>Member Profile</h1>
+    </div>
+    <div class="screen-content">
+      <input type="text" class="search-box" id="playerSearch" placeholder="Search your name..." oninput="filterPlayers()">
+      <ul class="player-list" id="playerList"></ul>
+    </div>
+  </div>
+
+  <!-- PLAYER PROFILE -->
+  <div class="screen hidden" id="profileScreen">
+    <div class="header">
+      <button class="back-btn" onclick="showScreen('profileSearchScreen')">&#8592;</button>
+      <h1 id="profileTitle">Profile</h1>
+    </div>
+    <div class="screen-content"><div id="profileContent"></div></div>
+  </div>
+
+  <!-- TOURNAMENTS -->
+  <div class="screen hidden" id="tournamentScreen">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">&#8592;</button>
+      <h1>Tournaments</h1>
+    </div>
+    <div class="screen-content">
+      <div class="ladders-group-title">Tournament Leaderboards</div>
+      <div class="ladders-grid">
+        <button class="menu-btn" onclick="loadTournamentSheet('1mNh_O-TrICSHYPXXMjtpMWmJspw2ngxEgEwWMjkp2Io','991731131','Men\'s Doubles Leaderboard')">Men's Doubles</button>
+        <button class="menu-btn" onclick="loadTournamentSheet('14Ppw5EBAJWzwlcLOEg81KxStsu0O1ZoXqb-fDFQZ_YI','1560570978','Ladies Doubles Leaderboard')">Ladies Doubles</button>
+        <button class="menu-btn" style="grid-column:span 2;" onclick="loadTournamentSheet('1SbVkJMZ6eLHH8-rhlpscsdkZq0zsHGUOoPtkG2s75t0','1749747814','Mixed Doubles Leaderboard')">Mixed Doubles</button>
+      </div>
+      <div class="ladders-group-title">Tournament Stats</div>
+      <div class="ladders-grid">
+        <button class="menu-btn" onclick="loadTournamentSheet('15ioI4HDKQJ2AHilfRxtw8sOx3a5h47fMRx6wglUZLrs','1535335554','Men\'s Doubles Stats')">Men's Doubles</button>
+        <button class="menu-btn" onclick="loadTournamentSheet('15ioI4HDKQJ2AHilfRxtw8sOx3a5h47fMRx6wglUZLrs','1779361555','Ladies Doubles Stats')">Ladies Doubles</button>
+        <button class="menu-btn" onclick="loadTournamentSheet('15ioI4HDKQJ2AHilfRxtw8sOx3a5h47fMRx6wglUZLrs','2006988657','Mixed Doubles Stats')">Mixed Doubles</button>
+        <button class="menu-btn" onclick="loadTournamentSheet('15ioI4HDKQJ2AHilfRxtw8sOx3a5h47fMRx6wglUZLrs','863533181','All Sorts Stats')">All Sorts</button>
+        <button class="menu-btn" style="grid-column:span 2;" onclick="loadTournamentSheet('15ioI4HDKQJ2AHilfRxtw8sOx3a5h47fMRx6wglUZLrs','669456070','Universal Stats')">Universal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOURNAMENT SHEET DISPLAY -->
+  <div class="screen hidden" id="tournamentSheetScreen">
+    <div class="header">
+      <button class="back-btn" onclick="showScreen('tournamentScreen')">&#8592;</button>
+      <h1 id="tournamentSheetTitle">Tournament</h1>
+    </div>
+    <div class="screen-content" style="padding:0;overflow-x:auto;">
+      <div id="tournamentSheetContent" class="loading"><span class="loading-spinner">⏳</span>Loading...</div>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="screen hidden" id="aboutScreen">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">&#8592;</button>
+      <h1>About OPR</h1>
+    </div>
+    <div class="screen-content">
+      <div class="about-hero">
+        <div style="font-size:36px;margin-bottom:8px;">🎾</div>
+        <h2>Open Padel Rating</h2>
+        <p>Designed for Doubles and Mixed Pairs</p>
+      </div>
+
+      <div class="about-section">
+        <h3>What Is OPR?</h3>
+        <p>Open Padel Rating (OPR) is an independent, transparent rating system designed specifically for doubles and mixed pairs padel. Unlike existing systems that adapt individual tennis or squash models, OPR was built from the ground up for the realities of club padel — where partners change, gender combinations vary, and match volume is limited.</p>
+        <p>OPR is open by design. Every formula, every weighting, and every adjustment threshold is explainable to any player, administrator, or partner. There are no black boxes.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>How Ratings Work</h3>
+        <p>Every match updates your rating automatically. The system considers not just whether you won, but how convincingly you won — set margins, game differentials, and how surprising the result was given the teams' ratings.</p>
+        <p>Bigger upsets earn more points. Dominant victories earn more than narrow wins. Playing more matches builds confidence in your rating over time.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>Match Types</h3>
+        <div>
+          <span class="about-badge">Men's</span>
+          <span class="about-badge">Ladies</span>
+          <span class="about-badge">Mixed</span>
+          <span class="about-badge">All Sorts</span>
+        </div>
+        <p style="margin-top:8px;">OPR handles any combination — two men, two women, mixed gender, or any All Sorts configuration. Mixed and All Sorts pairs use a weighted rating that gives more weight to the stronger partner, reflecting their greater influence on the match.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>Your Level</h3>
+        <p>Your Level is simply your rating divided by 200. It gives you a simple number to communicate your standard without needing to explain raw rating points. Level 5 is entry, Level 9 is elite.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>Design & Intellectual Property</h3>
+        <p>OPR was conceived, designed, and built by <strong>Andre Farrell</strong>. The rating methodology, formula architecture, weighting system, Net Performance Index, and Star Performer Index are original works developed exclusively by Andre Farrell.</p>
+        <p>This system may not be copied, reproduced, or commercialised without the express written permission of the designer.</p>
+        <p><strong>© 2026 Andre Farrell. All rights reserved.</strong></p>
+      </div>
+
+      <div class="about-section">
+        <h3>Version</h3>
+        <p>OPR Version 2.0 — June 2026</p>
+        <p>Built with passion for the game of padel. 🎾</p>
+      </div>
+
+      <div class="copyright">© 2026 Andre Farrell · Open Padel Rating · All Rights Reserved</div>
+    </div>
+  </div>
+
+  <!-- SCORE ENTRY -->
+  <div class="screen hidden" id="entryScreen">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">&#8592;</button>
+      <h1>Enter Score</h1>
+    </div>
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+      <div class="step-dot" id="dot3"></div>
+      <div class="step-dot" id="dot4"></div>
+    </div>
+    <div class="screen-content" id="entryContent"></div>
+  </div>
+
+  <!-- PLAYER SEARCH MODAL -->
+  <div class="modal-overlay" id="playerModalOverlay" style="display:none;" onclick="closePlayerModal()"></div>
+  <div class="player-modal" id="playerModal" style="display:none;">
+    <div class="player-modal-header">
+      <div class="player-modal-title" id="playerModalTitle">Select Player</div>
+      <input type="text" class="player-modal-search" id="playerModalSearch" placeholder="Type to search..." oninput="filterModalPlayers()" autocomplete="off">
+    </div>
+    <div class="player-modal-list" id="playerModalList"></div>
+    <div class="player-modal-cancel" onclick="closePlayerModal()">Cancel</div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '1xaF1ng5jUVYDlKzkvww7HCqhGst5FB88aHSxzbeBZZs';
+const MASTER_PIN = '1963';
+// PIN_GIDS: gids for Men and Ladies DATA sheets (not wall sheets)
+// Andre: replace MEN_GID and LADIES_GID with actual sheet tab gids
+const PIN_GIDS = {mens:'0', ladies:'951466450'};
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwwDoLQfbdArMIeVeWaVEPQfY8gnDKv5sSZqIMYXLWUvoWAs_q4QBfH3wnRpQVaRSov5g/exec';
+const GIDS = {
+  players:'961698676', matches:'980623229',
+  mens:'552393349', ladies:'1092914270',
+  mensdoubles:'1535335554', ladiesdoubles:'1779361555',
+  mixed:'2006988657', allsorts:'863533181', universal:'669456070'
+};
+
+let MEN = ["Alex Thomson","Andre Farrell","Andrew van Rensburg","Anthony Geldard","Arlin","Baron Wang","Bartjan Hooft","Benji","Billy Howes","Bonke","Brian Scott","Bruce Simelane","Carlos Rego","Charles Bethal","Chas Prettejohn","Chris Jackson","Cj Mentz","Colin Lovely","Conrad Chester","Coolant","Daniel Toro","Daryl McKenzie","Dean Wolverson","Derick Chester","Didi Hou","Eerfaan Dada","Graeme Guthrie","Grant Goldstone","Henry Jian","Ian Boyd","Ian McLoed","James Howes","Jeff Tseng","Jeremy Boyd","Jody Foss","Joe Roques","Khaya","Kim Roques","King Liu","Leo Chen","Luciano Ferreira","Mark Hunter","Matt Sprague","Mike Cutting","Mike Irwin","Mike Roach","Neil von Wissell","Phil Mayhew","Pierre Crous","Richard Cunningham","Richard Ferenczy","Richard Jarvis","Rob Jupp","Rob Reilly","Robbie James","Robert Chester","Roberto Russo","Ruan Beylefeld","Sandeep","Tarun","Sholto","Siya","Sizwe","Steve Packard","Stuart Hulley","Thulani","Tim Bertrand","Ward Young","William Lorentz","Wyn Evans"];
+let LADIES = ["Ally James","Angel","Angie lee","Anna Boyd","Ariel Liu","Bridget Farrell","Bron Evans","Carmen Guthrie","Charlene","Chereen Thomson","Chloe Thorne","Daniella Brink","Debbie Cutting","Debbie Hulley","Elmi Chester","Estelle Hamer","Hedy Hsu","Inge janse van Vuuren","Jeanine Van Wyk","Jen Boyd","Jen Sprague","Jess Hooft","Judy Curry","Judy Palmer","Julia Hulley","June McKenzie","Kate Reilly","Kerry Howes","Kim Nisbit","Kirsten Chester","Kirstie van Rensburg","Lucy McKenzie","Marisa Edwards","Mieka","Mishkah","Nadia Dada","Paloma Jupp","Philly","Rachel Bertrand","Robs Roques","Robyn","Robyn Jarvis","Sally James","Sam Farrell","Sarah Johnson","Seugnet","Shanni Chang","SJ Thomson","Stephanie Lin","Tina Lovely","Tracy McKenzie","Vanessa Jackson","Verne Von Wissell","Wendy Reed"];
+
+async function loadPlayers() {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GIDS.players}`;
+    const r = await fetch(url);
+    const text = await r.text();
+    const rows = text.trim().split('\n').slice(1);
+    const m=[], l=[];
+    rows.forEach(row => {
+      const cols = parseCSV(row);
+      const name = cols[0]?cols[0].replace(/^"|"$/g,'').trim():'';
+      const gender = cols[1]?cols[1].replace(/^"|"$/g,'').trim():'';
+      if(name && name!=='Name'){ if(gender==='M') m.push(name); else if(gender==='F') l.push(name); }
+    });
+    if(m.length>0) MEN=m.sort((a,b)=>a.localeCompare(b));
+    if(l.length>0) LADIES=l.sort((a,b)=>a.localeCompare(b));
+  } catch(e){}
+}
+
+function parseCSV(row) {
+  const cols=[]; let cur='', inQ=false;
+  for(let i=0;i<row.length;i++){
+    const ch=row[i];
+    if(ch==='"'){inQ=!inQ;}
+    else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
+    else{cur+=ch;}
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
+function getPlayerList(type) {
+  if(type==="Men's") return MEN;
+  if(type==="Ladies") return LADIES;
+  return [...MEN,...LADIES].sort((a,b)=>a.localeCompare(b));
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.classList.add('hidden');});
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='entryScreen') renderStep1();
+}
+
+function goHome() {
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.classList.add('hidden');});
+  document.getElementById('homeScreen').classList.remove('hidden');
+  document.getElementById('homeScreen').classList.add('active');
+  loadRecent();
+}
+
+async function loadLadder(type, title) {
+  document.getElementById('ladderTitle').textContent = title;
+  document.getElementById('ladderContent').innerHTML = '<div class="loading"><span class="loading-spinner">⏳</span>Loading...</div>';
+  showScreen('ladderScreen');
+  document.getElementById('ladderTitle').textContent = title;
+  try {
+    const gidMap={'mens':'552393349','ladies':'1092914270','mensdoubles':'1535335554','ladiesdoubles':'1779361555','mixed':'2006988657','allsorts':'863533181','universal':'669456070'};
+    const gid=gidMap[type]||GIDS[type];
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+    const resp = await fetch(url);
+    const text = await resp.text();
+    const rows = text.trim().split('\n');
+    if(rows.length<2){document.getElementById('ladderContent').innerHTML='<div class="empty-state"><div class="icon">🎾</div><p>No data yet</p></div>';return;}
+    const headers = parseCSV(rows[0]);
+    const data = rows.slice(1).map(row=>parseCSV(row)).filter(row=>row[0]!=='');
+    let html = '<table class="ladder-table"><thead><tr>';
+    headers.forEach(h=>{html+=`<th>${h}</th>`;});
+    html+='</tr></thead><tbody>';
+    data.forEach(row=>{
+      html+='<tr>';
+      row.forEach((cell,ci)=>{
+        if(ci===0){
+          const rn=parseInt(cell);
+          const cls=rn===1?'rank-1':rn===2?'rank-2':rn===3?'rank-3':'';
+          html+=`<td><span class="rank-badge ${cls}">${cell}</span></td>`;
+        } else { html+=`<td>${cell}</td>`; }
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    document.getElementById('ladderContent').innerHTML=html;
+  } catch(e){
+    document.getElementById('ladderContent').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Could not load. Check connection.</p></div>';
+  }
+}
+
+function showProfileSearch() {
+  showScreen('profileSearchScreen');
+  const all=[...MEN.map(n=>({name:n,gender:'M'})),...LADIES.map(n=>({name:n,gender:'F'}))].sort((a,b)=>a.name.localeCompare(b.name));
+  renderPlayerList(all);
+}
+
+async function loadTournamentSheet(sheetId, gid, title) {
+  document.getElementById('tournamentSheetTitle').textContent = title;
+  document.getElementById('tournamentSheetContent').innerHTML = '<div class="loading"><span class="loading-spinner">⏳</span>Loading...</div>';
+  showScreen('tournamentSheetScreen');
+  document.getElementById('tournamentSheetTitle').textContent = title;
+  try {
+    const url=`https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+    const resp = await fetch(url);
+    const text = await resp.text();
+    const rows = text.trim().split('\n');
+    if(rows.length<2){document.getElementById('tournamentSheetContent').innerHTML='<div class="empty-state"><div class="icon">🎾</div><p>No data yet</p></div>';return;}
+    const headers = parseCSV(rows[0]);
+    const data = rows.slice(1).map(row=>parseCSV(row)).filter(row=>row.some(c=>c&&c.trim()!==''));
+    let html = '<table class="ladder-table"><thead><tr>';
+    headers.forEach(h=>{html+=`<th>${h}</th>`;});
+    html+='</tr></thead><tbody>';
+    data.forEach(row=>{
+      html+='<tr>';
+      row.forEach((cell,ci)=>{
+        if(ci===0){
+          const rn=parseInt(cell);
+          const cls=rn===1?'rank-1':rn===2?'rank-2':rn===3?'rank-3':'';
+          if(!isNaN(rn)){html+=`<td><span class="rank-badge ${cls}">${cell}</span></td>`;}
+          else {html+=`<td>${cell}</td>`;}
+        } else { html+=`<td>${cell}</td>`; }
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    document.getElementById('tournamentSheetContent').innerHTML=html;
+  } catch(e){
+    document.getElementById('tournamentSheetContent').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Could not load. Check connection.</p></div>';
+  }
+}
+
+function renderPlayerList(players) {
+  document.getElementById('playerList').innerHTML = players.map(p=>`
+    <li class="player-item" onclick="loadProfile('${p.name.replace(/'/g,"\\'")}','${p.gender}')">
+      <div class="player-avatar">${p.name[0]}</div>
+      <div><div class="player-name">${p.name}</div><div class="player-gender">${p.gender==='M'?"Men's":"Ladies"}</div></div>
+    </li>`).join('');
+}
+
+function filterPlayers() {
+  const q=document.getElementById('playerSearch').value.toLowerCase();
+  const all=[...MEN.map(n=>({name:n,gender:'M'})),...LADIES.map(n=>({name:n,gender:'F'}))].sort((a,b)=>a.name.localeCompare(b.name));
+  renderPlayerList(q?all.filter(p=>p.name.toLowerCase().split(' ')[0].startsWith(q)):all);
+}
+
+async function loadProfile(name, gender) {
+  document.getElementById('profileTitle').textContent = name.split(' ')[0];
+  window._profileName = name;
+  document.getElementById('profileContent').innerHTML = '<div class="loading"><span class="loading-spinner">⏳</span>Loading...</div>';
+  showScreen('profileScreen');
+  try {
+    const isMen = gender==='M';
+    const gid = isMen?GIDS.mens:GIDS.ladies;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+    const r = await fetch(url);
+    const text = await r.text();
+    const rows = text.trim().split('\n').slice(1);
+    let playerRow = null;
+    for(const row of rows){
+      const cols=parseCSV(row);
+      if(cols[1]&&cols[1].toLowerCase()===name.toLowerCase()){playerRow=cols;break;}
+    }
+
+    const rank = playerRow?playerRow[0]:'-';
+    const rating = playerRow?Math.round(parseFloat(playerRow[2])||0):'-';
+    const level = playerRow?playerRow[3]:'-';
+    const setsPlayed = playerRow?playerRow[4]:'0';
+    const setsWon = playerRow?playerRow[5]:'0';
+    const setWinPct = playerRow?playerRow[6]:'-';
+
+    // Match history
+    const matchUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GIDS.matches}`;
+    let matchHTML = '';
+    try {
+      const mr = await fetch(matchUrl);
+      const mt = await mr.text();
+      const allRows = mt.trim().split('\n').slice(1).map(r=>parseCSV(r));
+      const playerMatches = allRows.filter(r=>{
+        const n=r[3]?r[3].trim():'';
+        return (n!==''&&n!=='0'&&isNaN(n)&&n.length>1)&&
+          (r[3]===name||r[4]===name||r[7]===name||r[8]===name);
+      }).reverse();
+      window._profileMatches = playerMatches;
+
+      if(playerMatches.length>0){
+        matchHTML = `<div class="section-header">Match History (${playerMatches.length})</div>`;
+        playerMatches.forEach(row=>{
+          const date=row[1]||'';
+          const type=row[2]||'';
+          const t1p1=row[3]||'',t1p2=row[4]||'';
+          const t1sets=parseInt(row[5])||0,t2sets=parseInt(row[9])||0;
+          const t1games=parseInt(row[6])||0,t2games=parseInt(row[10])||0;
+          const t2p1=row[7]||'',t2p2=row[8]||'';
+          let partner,opp1,opp2,won;
+          if(t1p1===name||t1p2===name){
+            partner=t1p1===name?t1p2:t1p1;opp1=t2p1;opp2=t2p2;won=t1sets>t2sets;
+          } else {
+            partner=t2p1===name?t2p2:t2p1;opp1=t1p1;opp2=t1p2;won=t2sets>t1sets;
+          }
+          const mysets=won?(t1p1===name||t1p2===name?t1sets:t2sets):(t1p1===name||t1p2===name?t1sets:t2sets);
+          const oppsets=won?(t1p1===name||t1p2===name?t2sets:t1sets):(t1p1===name||t1p2===name?t2sets:t1sets);
+          const midx=playerMatches.indexOf(row);
+          matchHTML+=`<div class="match-row" onclick="toggleProfileMatch(${midx})" style="cursor:pointer;" id="pmatch_${midx}">
+            <span class="${won?'win-badge':'loss-badge'}">${won?'W':'L'}</span>
+            <div class="match-info">
+              <div class="partners">With ${partner||'-'}</div>
+              <div class="opponents">vs ${opp1} & ${opp2}</div>
+            </div>
+            <div class="match-meta">
+              <div class="score">${mysets}-${oppsets}</div>
+              <div class="date">${date} · ${type} ▼</div>
+            </div>
+          </div>
+          <div id="pmatchdetail_${midx}" style="display:none;background:#F5EEF8;padding:8px 12px;border-radius:8px;margin:-4px 0 4px;font-size:12px;text-align:center;"></div>`;
+        });
+      } else {
+        matchHTML='<div class="empty-state" style="padding:20px 0;"><p>No matches yet</p></div>';
+      }
+    } catch(e){}
+
+    document.getElementById('profileContent').innerHTML = `
+      <div class="profile-card">
+        <div class="profile-name">${name}</div>
+        <div class="profile-rating">${rating}</div>
+        <div class="profile-level">Level ${level}</div>
+        <div class="profile-rank">Rank #${rank} · ${isMen?"Men's":"Ladies"}</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-value">${setsPlayed}</div><div class="stat-label">Sets Played</div></div>
+        <div class="stat-card"><div class="stat-value">${setsWon}</div><div class="stat-label">Sets Won</div></div>
+        <div class="stat-card"><div class="stat-value">${setWinPct}%</div><div class="stat-label">Win %</div></div>
+      </div>
+      ${matchHTML}`;
+  } catch(e){
+    document.getElementById('profileContent').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Could not load profile.</p></div>';
+  }
+}
+
+// ===== SCORE ENTRY =====
+let entryData={};
+
+function setStep(n){
+  for(let i=1;i<=4;i++){
+    const d=document.getElementById('dot'+i);
+    if(!d)return;
+    d.className='step-dot'+(i<n?' done':i===n?' active':'');
+  }
+}
+
+async function renderStep1(){
+  setStep(1);
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('entryContent').innerHTML=`
+    <div class="field"><label>Date</label><input type="date" id="matchDate" value="${today}"></div>
+    <div class="field"><label>Match Type</label>
+      <select id="matchType">
+        <option value="">Select type...</option>
+        <option value="Men's">Men's</option>
+        <option value="Ladies">Ladies</option>
+        <option value="Mixed">Mixed</option>
+        <option value="All Sorts">All Sorts</option>
+      </select>
+    </div>
+    <div class="field"><label>Sets Played</label>
+      <select id="setsPlayed">
+        <option value="">Select sets...</option>
+        <option value="1">1 set</option>
+        <option value="2">2 sets</option>
+        <option value="3">3 sets</option>
+      </select>
+    </div>
+    <div id="err1" class="error-msg">Please fill in all fields.</div>
+    <button class="btn btn-primary" onclick="step1Next()">Next: Enter Player Names &rarr;</button>`;
+}
+
+// Store recent matches globally for tap-to-expand
+let recentMatchesData = [];
+
+async function loadRecent(){
+  try{
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GIDS.matches}`;
+    const r=await fetch(url);
+    const text=await r.text();
+    const rows=text.trim().split('\n').slice(1).map(r=>parseCSV(r)).filter(r=>{
+      const n=r[3]?r[3].trim():'';
+      return n!==''&&n!=='0'&&isNaN(n)&&n.length>1;
+    });
+    const last12=rows.slice(-15).reverse();
+    recentMatchesData=last12;
+    if(last12.length===0){document.getElementById('homeRecentList').innerHTML='<div style="color:#888;font-size:12px;">No matches yet</div>';return;}
+    renderRecentList();
+  }catch(e){document.getElementById('homeRecentList').innerHTML='<div style="color:#888;font-size:12px;">Could not load</div>';}
+}
+
+function renderRecentList(){
+  document.getElementById('homeRecentList').innerHTML=recentMatchesData.map((row,idx)=>`
+    <div class="recent-item" onclick="toggleRecent(${idx})" id="recent_${idx}">
+      <div class="match-header">
+        <span class="match-date">${row[1]||''}</span>
+        <span class="match-type">${row[2]||''}</span>
+        <span style="color:#6C3483;font-size:11px;">▼</span>
+      </div>
+      <div class="match-teams"><strong>${row[3]||''} & ${row[4]||''}</strong> ${row[5]||0}-${row[9]||0} <strong>${row[7]||''} & ${row[8]||''}</strong></div>
+      <div class="match-detail" id="detail_${idx}" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid #D7BDE2;"></div>
+    </div>`).join('');
+}
+
+async function toggleRecent(idx){
+  const detail=document.getElementById('detail_'+idx);
+  const arrow=document.getElementById('recent_'+idx).querySelector('span:last-child');
+  if(detail.style.display==='none'){
+    const row=recentMatchesData[idx];
+    const t1p1=row[3]||'',t1p2=row[4]||'';
+    const t2p1=row[7]||'',t2p2=row[8]||'';
+    const t1sets=row[5]||0,t2sets=row[9]||0;
+    const t1games=row[6]||0,t2games=row[10]||0;
+    detail.innerHTML='<div style="color:#888;font-size:11px;">Loading scores...</div>';
+    detail.style.display='block';
+    arrow.textContent='▲';
+    // Look up set scores from Submissions tab by matching date and players
+    let setScoresHTML='';
+    try{
+      const subUrl=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1534372635`;
+      const sr=await fetch(subUrl);
+      const st=await sr.text();
+      const subRows=st.trim().split('\n').slice(1).map(r=>parseCSV(r));
+      // Find matching row by date and T1P1
+      const match=subRows.find(r=>r[1]===row[1]&&r[3]===t1p1&&r[4]===t1p2)||
+                  subRows.find(r=>r[1]===row[1]&&r[3]===t1p1)||
+                  subRows.find(r=>r[1]===row[1]&&(r[3]===t1p1||r[3]===t2p1));
+      if(match){
+        // Submissions cols: 0=Submitted,1=Date,2=Type,3=T1P1,4=T1P2,5=T1Sets,6=T1Games,
+        // 7=T2P1,8=T2P2,9=T2Sets,10=T2Games,11=Set1T1,12=Set1T2,13=Set2T1,14=Set2T2,15=Set3T1,16=Set3T2
+        const scores=[];
+        for(let s=0;s<3;s++){
+          const s1=match[11+s*2]||'',s2=match[12+s*2]||'';
+          if(s1!==''&&s2!=='') scores.push(`${s1}/${s2}`);
+        }
+        if(scores.length>0){
+          setScoresHTML=scores.map(sc=>`<span style="background:#6C3483;color:white;border-radius:4px;padding:3px 10px;margin:0 3px;font-size:13px;font-weight:700;">${sc}</span>`).join('');
+        }
+      }
+    }catch(e){}
+    detail.innerHTML=`
+      <div style="margin-bottom:6px;text-align:center;">
+        ${setScoresHTML||'<span style="color:#888;font-size:11px;">Set scores not in audit trail</span>'}
+      </div>
+      <div style="font-size:11px;color:#888;text-align:center;">Sets: ${t1sets}-${t2sets}  ·  Games: ${t1games}-${t2games}</div>`;
+  } else {
+    detail.style.display='none';
+    arrow.textContent='▼';
+  }
+}
+
+function step1Next(){
+  const date=document.getElementById('matchDate').value;
+  const type=document.getElementById('matchType').value;
+  const sets=document.getElementById('setsPlayed').value;
+  if(!date||!type||!sets){document.getElementById('err1').style.display='block';return;}
+  entryData={date,type,sets:parseInt(sets)};
+  renderStep2();
+}
+
+function populateSel(sel,players,exclude,selected){
+  sel.innerHTML='<option value="">Select...</option>';
+  players.forEach(p=>{
+    if(!exclude.includes(p)){
+      const o=document.createElement('option');
+      o.value=p;o.textContent=p;
+      if(p===selected)o.selected=true;
+      sel.appendChild(o);
+    }
+  });
+}
+
+function renderStep2(){
+  setStep(2);
+  document.getElementById('entryContent').innerHTML=`
+    <div class="team-card">
+      <div class="team-label"><span>1</span>Team 1</div>
+      <div class="field">
+        <label>Player 1</label>
+        <input type="hidden" id="t1p1_val">
+        <button class="player-display" id="t1p1_btn" onclick="openPlayerModal('t1p1','Team 1 - Player 1')">
+          <span id="t1p1_lbl">Tap to select...</span><span class="arrow">&#9660;</span>
+        </button>
+      </div>
+      <div class="field">
+        <label>Player 2</label>
+        <input type="hidden" id="t1p2_val">
+        <button class="player-display" id="t1p2_btn" onclick="openPlayerModal('t1p2','Team 1 - Player 2')">
+          <span id="t1p2_lbl">Tap to select...</span><span class="arrow">&#9660;</span>
+        </button>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-label"><span>2</span>Team 2</div>
+      <div class="field">
+        <label>Player 1</label>
+        <input type="hidden" id="t2p1_val">
+        <button class="player-display" id="t2p1_btn" onclick="openPlayerModal('t2p1','Team 2 - Player 1')">
+          <span id="t2p1_lbl">Tap to select...</span><span class="arrow">&#9660;</span>
+        </button>
+      </div>
+      <div class="field">
+        <label>Player 2</label>
+        <input type="hidden" id="t2p2_val">
+        <button class="player-display" id="t2p2_btn" onclick="openPlayerModal('t2p2','Team 2 - Player 2')">
+          <span id="t2p2_lbl">Tap to select...</span><span class="arrow">&#9660;</span>
+        </button>
+      </div>
+    </div>
+    <div id="err2" class="error-msg">Please select all four players.</div>
+    <div class="nav-row">
+      <button class="btn btn-secondary" onclick="renderStep1()">&larr; Back</button>
+      <button class="btn btn-primary" onclick="step2Next()">Next: Enter Scores &rarr;</button>
+    </div>`;
+}
+
+function filterDrops(){
+  // Modal handles exclusions dynamically - nothing needed here
+}
+
+function step2Next(){
+  const ids=['t1p1','t1p2','t2p1','t2p2'];
+  const vals=ids.map(id=>{
+    const el=document.getElementById(id+'_val');
+    return el?el.value.trim():'';
+  });
+  if(vals.some(v=>!v)){document.getElementById('err2').textContent='Please select all four players.';document.getElementById('err2').style.display='block';return;}
+  if(new Set(vals).size<4){document.getElementById('err2').textContent='All four must be different.';document.getElementById('err2').style.display='block';return;}
+  entryData.t1p1=vals[0];entryData.t1p2=vals[1];entryData.t2p1=vals[2];entryData.t2p2=vals[3];
+  renderStep3();
+}
+
+function renderStep3(){
+  setStep(3);
+  const s=entryData.sets;
+  const t1=entryData.t1p1+' & '+entryData.t1p2;
+  const t2=entryData.t2p1+' & '+entryData.t2p2;
+  let tbl=`<table class="set-table"><thead><tr><th></th>`;
+  for(let i=1;i<=s;i++)tbl+=`<th>Set ${i}</th>`;
+  tbl+=`</tr></thead><tbody><tr><td>${t1}</td>`;
+  for(let i=1;i<=s;i++)tbl+=`<td><input class="set-input" type="number" min="0" max="99" id="s${i}t1" oninput="hlWin(${i})" placeholder="0"></td>`;
+  tbl+=`</tr><tr><td>${t2}</td>`;
+  for(let i=1;i<=s;i++)tbl+=`<td><input class="set-input" type="number" min="0" max="99" id="s${i}t2" oninput="hlWin(${i})" placeholder="0"></td>`;
+  tbl+=`</tr></tbody></table>`;
+  document.getElementById('entryContent').innerHTML=`
+    ${tbl}
+    <div id="err3" class="error-msg">Please enter all scores.</div>
+    <div class="nav-row" style="margin-top:12px;">
+      <button class="btn btn-secondary" onclick="renderStep2()">&larr; Back</button>
+      <button class="btn btn-primary" onclick="step3Next()">See Result &rarr;</button>
+    </div>`;
+}
+
+function hlWin(s){
+  const t1=document.getElementById('s'+s+'t1'),t2=document.getElementById('s'+s+'t2');
+  if(!t1||!t2)return;
+  const v1=parseInt(t1.value)||0,v2=parseInt(t2.value)||0;
+  t1.className='set-input'+(v1>v2&&t1.value!==''&&t2.value!==''?' winner':'');
+  t2.className='set-input'+(v2>v1&&t1.value!==''&&t2.value!==''?' winner':'');
+}
+
+function step3Next(){
+  const s=entryData.sets;
+  for(let i=1;i<=s;i++){
+    if(document.getElementById('s'+i+'t1').value===''||document.getElementById('s'+i+'t2').value===''){
+      document.getElementById('err3').style.display='block';return;
+    }
+  }
+  let t1s=0,t2s=0,t1g=0,t2g=0;
+  const sc={};
+  for(let i=1;i<=s;i++){
+    const v1=parseInt(document.getElementById('s'+i+'t1').value)||0;
+    const v2=parseInt(document.getElementById('s'+i+'t2').value)||0;
+    t1g+=v1;t2g+=v2;
+    if(v1>v2)t1s++;else if(v2>v1)t2s++;
+    sc['set'+i+'t1']=v1;sc['set'+i+'t2']=v2;
+  }
+  entryData={...entryData,t1sets:t1s,t2sets:t2s,t1games:t1g,t2games:t2g,...sc};
+  renderStep4();
+}
+
+function renderStep4(){
+  setStep(4);
+  const t1w=entryData.t1sets>entryData.t2sets;
+  const scoreStr=Array.from({length:entryData.sets},(_,i)=>`${entryData['set'+(i+1)+'t1']}-${entryData['set'+(i+1)+'t2']}`).join('  ');
+  const players=[entryData.t1p1,entryData.t1p2,entryData.t2p1,entryData.t2p2];
+  const playerOptions=players.map(p=>`<option value="${p}">${p}</option>`).join('');
+  document.getElementById('entryContent').innerHTML=`
+    <div class="result-card ${t1w?'winner':'loser'}">
+      <div>${t1w?'<div class="winner-label">Winner</div>':''}<div class="result-names">${entryData.t1p1}<br>${entryData.t1p2}</div></div>
+      <div style="text-align:right;"><div class="result-sets">${entryData.t1sets}</div><div class="result-games">${entryData.t1games} games</div></div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:#888;padding:5px 0;">${scoreStr}</div>
+    <div class="result-card ${!t1w?'winner':'loser'}">
+      <div>${!t1w?'<div class="winner-label">Winner</div>':''}<div class="result-names">${entryData.t2p1}<br>${entryData.t2p2}</div></div>
+      <div style="text-align:right;"><div class="result-sets">${entryData.t2sets}</div><div class="result-games">${entryData.t2games} games</div></div>
+    </div>
+    <div style="background:#F5EEF8;border:1.5px solid #D7BDE2;border-radius:12px;padding:14px;margin-top:12px;">
+      <div style="font-size:13px;font-weight:700;color:#6C3483;margin-bottom:10px;">🔐 Verify Submission</div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Who are you?</label>
+        <select id="submitterName" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;">
+          <option value="">Select your name...</option>
+          ${playerOptions}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Your PIN</label>
+        <input type="password" id="submitterPin" maxlength="4" placeholder="4-digit PIN"
+          style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:18px;font-weight:700;letter-spacing:6px;text-align:center;">
+      </div>
+    </div>
+    <div id="err4" class="error-msg"></div>
+    <div class="nav-row" style="margin-top:12px;">
+      <button class="btn btn-secondary" onclick="renderStep3()">&larr; Back</button>
+      <button class="btn btn-success" id="submitBtn" onclick="submitMatch()">&#10003; Submit Match</button>
+    </div>`;
+}
+
+async function submitMatch(){
+  const submitter=document.getElementById('submitterName').value;
+  const pin=document.getElementById('submitterPin').value;
+  const err=document.getElementById('err4');
+
+  if(!submitter){err.textContent='Please select your name.';err.style.display='block';return;}
+  if(!pin||pin.length<4){err.textContent='Please enter your 4-digit PIN.';err.style.display='block';return;}
+
+  // Check PIN
+  err.style.display='none';
+  const btn=document.getElementById('submitBtn');
+  btn.textContent='Verifying...';btn.disabled=true;
+
+  // Master PIN check
+  if(pin===MASTER_PIN){
+    entryData.submittedBy='Admin';
+    doSubmit(btn);
+    return;
+  }
+
+  // Look up player PIN from Men/Ladies DATA sheet (not wall sheet)
+  try{
+    const isMen=MEN.includes(submitter);
+    const dataGid=isMen?PIN_GIDS.mens:PIN_GIDS.ladies;
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${dataGid}`;
+    const r=await fetch(url);
+    const text=await r.text();
+    const rows=text.trim().split('\n').slice(1).map(row=>parseCSV(row));
+    const playerRow=rows.find(row=>row[0]&&row[0].trim().toLowerCase()===submitter.toLowerCase());
+    if(!playerRow){err.textContent='Player not found. Contact administrator.';err.style.display='block';btn.textContent='\u2713 Submit Match';btn.disabled=false;return;}
+    const storedPin=playerRow[6]?playerRow[6].trim():'';
+    if(storedPin!==pin){err.textContent='Incorrect PIN. Please try again.';err.style.display='block';btn.textContent='\u2713 Submit Match';btn.disabled=false;return;}
+    entryData.submittedBy=submitter;
+    doSubmit(btn);
+  }catch(e){
+    err.textContent='Could not verify PIN. Check your connection.';err.style.display='block';
+    btn.textContent='\u2713 Submit Match';btn.disabled=false;
+  }
+}
+
+async function doSubmit(btn){
+  btn.textContent='Submitting...';
+  try{
+    await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(entryData)});
+    document.getElementById('entryContent').innerHTML=`
+      <div class="success-icon">✅</div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:#1e8449;margin-bottom:8px;">Match Submitted!</div>
+        <div style="font-size:13px;color:#666;">${entryData.t1p1} & ${entryData.t1p2}<br>vs<br>${entryData.t2p1} & ${entryData.t2p2}</div>
+        <div style="font-size:12px;color:#888;margin-top:6px;">${entryData.t1sets}-${entryData.t2sets} sets</div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;">Submitted by ${entryData.submittedBy}</div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:20px;" onclick="renderStep1()">Enter Another Match</button>
+      <button class="btn btn-secondary" style="margin-top:8px;" onclick="goHome()">Back to Home</button>`;
+    setStep(0);
+  }catch(e){
+    document.getElementById('err4').textContent='Submission failed. Please try again.';
+    document.getElementById('err4').style.display='block';
+    btn.textContent='\u2713 Submit Match';btn.disabled=false;
+  }
+}
+
+async function toggleProfileMatch(idx){
+  const detail=document.getElementById('pmatchdetail_'+idx);
+  const row=window._profileMatches?window._profileMatches[idx]:null;
+  if(!row){return;}
+  if(detail.style.display==='none'){
+    const t1p1=row[3]||'',t1p2=row[4]||'';
+    const t2p1=row[7]||'',t2p2=row[8]||'';
+    const t1s=row[5]||0,t2s=row[9]||0;
+    const date=row[1]||'',type=row[2]||'';
+    detail.innerHTML='<span style="color:#888;font-size:11px;">Loading scores...</span>';
+    detail.style.display='block';
+    // Look up set scores from Submissions tab
+    let scoresHTML='';
+    try{
+      const subUrl=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1534372635`;
+      const sr=await fetch(subUrl);
+      const st=await sr.text();
+      const subRows=st.trim().split('\n').slice(1).map(r=>parseCSV(r));
+      const match=subRows.find(r=>r[1]===date&&r[3]===t1p1&&r[4]===t1p2)||
+                  subRows.find(r=>r[1]===date&&(r[3]===t1p1||r[7]===t1p1));
+      if(match){
+        const scores=[];
+        const profileName=window._profileName||'';
+        const playerOnT1=(match[3]===profileName||match[4]===profileName);
+        for(let s=0;s<3;s++){
+          const t1s=parseInt(match[11+s*2])||0;
+          const t2s=parseInt(match[12+s*2])||0;
+          if(match[11+s*2]!==undefined&&match[11+s*2]!==''){
+            const myScore=playerOnT1?t1s:t2s;
+            const oppScore=playerOnT1?t2s:t1s;
+            const won=myScore>oppScore;
+            const bg=won?'#1e8449':'#c0392b';
+            scores.push('<span style="background:'+bg+';color:white;border-radius:4px;padding:3px 10px;margin:0 3px;font-size:13px;font-weight:700;">'+myScore+'/'+oppScore+'</span>');
+          }
+        }
+        if(scores.length>0){
+          scoresHTML=scores.join('');
+        }
+      }
+    }catch(e){}
+    detail.innerHTML='<div style="text-align:center;padding:4px 0;">'+(scoresHTML||'<span style="color:#888;font-size:11px;">'+t1s+'-'+t2s+' sets</span>')+'</div><div style="font-size:11px;color:#888;text-align:center;">'+date+' · '+type+'</div>';
+  } else {
+    detail.style.display='none';
+  }
+}
+
+let _currentModalTarget = null;
+let _currentModalPlayers = [];
+
+function openPlayerModal(fieldId, label) {
+  _currentModalTarget = fieldId;
+  const players = getPlayerList(entryData.type);
+  const ids = ['t1p1','t1p2','t2p1','t2p2'];
+  const sel = ids.map(id => {
+    const el = document.getElementById(id+'_val');
+    return el ? el.value : '';
+  });
+  const idx = ids.indexOf(fieldId);
+  const exclude = sel.filter((v,j) => j !== idx && v !== '');
+  _currentModalPlayers = players.filter(p => !exclude.includes(p));
+  document.getElementById('playerModalTitle').textContent = label;
+  document.getElementById('playerModalSearch').value = '';
+  renderModalList(_currentModalPlayers);
+  document.getElementById('playerModalOverlay').style.display = 'block';
+  document.getElementById('playerModal').style.display = 'flex';
+  document.getElementById('playerModalSearch').focus();
+}
+
+function filterModalPlayers() {
+  const q = document.getElementById('playerModalSearch').value.toLowerCase();
+  const filtered = q ? _currentModalPlayers.filter(p => {
+    const firstName = p.toLowerCase().split(' ')[0];
+    return firstName.startsWith(q);
+  }) : _currentModalPlayers;
+  renderModalList(filtered);
+}
+
+function renderModalList(players) {
+  document.getElementById('playerModalList').innerHTML = players.map(p =>
+    '<div class="player-modal-item" onclick="selectModalPlayer(\'' + p.replace(/'/g, "\\'") + '\')">' + p + '</div>'
+  ).join('');
+}
+
+function selectModalPlayer(name) {
+  if (!_currentModalTarget) return;
+  const valEl = document.getElementById(_currentModalTarget + '_val');
+  const lblEl = document.getElementById(_currentModalTarget + '_lbl');
+  const btnEl = document.getElementById(_currentModalTarget + '_btn');
+  if (valEl) valEl.value = name;
+  if (lblEl) lblEl.textContent = name;
+  if (btnEl) btnEl.classList.add('selected');
+  closePlayerModal();
+}
+
+function closePlayerModal() {
+  document.getElementById('playerModalOverlay').style.display = 'none';
+  document.getElementById('playerModal').style.display = 'none';
+  _currentModalTarget = null;
+}
+
+window.onload=async function(){await loadPlayers();loadRecent();};
+</script>
+</body>
+</html>
