@@ -46,15 +46,16 @@
   .menu-btn.soon:active { transform: none; background: #fafafa; }
 
   /* Ladder */
-  .ladder-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 480px; }
-  .ladder-table th { background: #6C3483; color: white; padding: 8px 6px; text-align: center; font-size: 11px; font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
+  .ladder-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: auto; }
+  .ladder-table th { background: #6C3483; color: white; padding: 8px 10px; text-align: center; font-size: 11px; font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
   .ladder-table th:first-child { text-align: left !important; padding-left: 10px; }
   .ladder-table th:nth-child(2) { text-align: left !important; }
-  .ladder-table td { padding: 7px 6px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; text-align: center; }
-  .ladder-table td:first-child { text-align: left !important; padding-left: 10px; }
-  .ladder-table td:nth-child(2) { text-align: left !important; }
+  .ladder-table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; text-align: center; }
+  .ladder-table td:first-child { text-align: left !important; padding-left: 10px; width: 1%; }
+  .ladder-table td:nth-child(2) { text-align: left !important; width: 1%; }
   .ladder-table tr:nth-child(even) td { background: #F5EEF8; }
-  .ladder-table tr.division-row td { background: #6C3483; color: #fff; font-weight: 700; font-size: 12px; text-align: left; padding: 9px 8px; }
+  .ladder-table tr.division-row td { background: #6C3483; color: #fff; font-weight: 700; font-size: 12px; text-align: left; padding: 9px 10px; }
+  .ladder-table tr.heading-row td { background: #EBD9F2; color: #4A235A; font-weight: 700; text-align: left; }
   .rank-badge { background: #6C3483; color: white; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
   .rank-1 { background: #F1C40F; color: #1a1a1a; }
   .rank-2 { background: #BDC3C7; color: #1a1a1a; }
@@ -160,7 +161,7 @@
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .empty-state { text-align: center; padding: 40px 20px; color: #888; }
   .empty-state .icon { font-size: 44px; margin-bottom: 10px; }
-  .player-modal { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.2); z-index: 1000; max-height: 70vh; display: flex; flex-direction: column; }
+  .player-modal { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-radius: 0 0 20px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 1000; max-height: 75vh; display: flex; flex-direction: column; }
   .player-modal-header { padding: 16px 16px 8px; border-bottom: 1px solid #eee; }
   .player-modal-title { font-size: 14px; font-weight: 700; color: #6C3483; margin-bottom: 8px; }
   .player-modal-search { width: 100%; padding: 10px 12px; border: 1.5px solid #D7BDE2; border-radius: 10px; font-size: 16px; outline: none; }
@@ -453,7 +454,7 @@ function goHome() {
   document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.classList.add('hidden');});
   document.getElementById('homeScreen').classList.remove('hidden');
   document.getElementById('homeScreen').classList.add('active');
-  loadRecent();
+  if(recentMatchesData.length>0){ renderRecentList(); } else { loadRecent(); }
 }
 
 async function loadLadder(type, title) {
@@ -515,12 +516,19 @@ async function loadTournamentSheet(sheetId, gid, title) {
     headers.forEach(h=>{html+=`<th>${h}</th>`;});
     html+='</tr></thead><tbody>';
     data.forEach(row=>{
-      // Detect a division/section header row: first cell has text, but the data columns are empty
+      // Heading-type rows have text in an early cell but no scores in the data columns
       const firstCell=(row[0]||'').trim();
+      const secondCell=(row[1]||'').trim();
+      const labelText = firstCell!=='' ? firstCell : secondCell;
       const restEmpty=row.slice(1).every(c=>!c||c.trim()==='');
-      const isDivision = firstCell!=='' && restEmpty && isNaN(parseInt(firstCell));
+      const isDivision = labelText!=='' && /division/i.test(labelText);
+      const isHeading = labelText!=='' && restEmpty && isNaN(parseInt(firstCell));
       if(isDivision){
-        html+=`<tr class="division-row"><td colspan="${headers.length}">${firstCell}</td></tr>`;
+        html+=`<tr class="division-row"><td colspan="${headers.length}">${labelText}</td></tr>`;
+        return;
+      }
+      if(isHeading){
+        html+=`<tr class="heading-row"><td colspan="${headers.length}">${labelText}</td></tr>`;
         return;
       }
       html+='<tr>';
