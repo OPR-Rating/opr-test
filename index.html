@@ -651,6 +651,7 @@ async function renderStep1(){
   document.getElementById('entryContent').innerHTML=`
     <div class="field"><label>Event</label>
       <select id="matchEvent">
+        <option value="">Select event...</option>
         <option value="Social">Social</option>
       </select>
     </div>
@@ -781,8 +782,8 @@ function step1Next(){
   const date=document.getElementById('matchDate').value;
   const type=document.getElementById('matchType').value;
   const sets=document.getElementById('setsPlayed').value;
-  const event=document.getElementById('matchEvent').value||'Social';
-  if(!date||!type||!sets){document.getElementById('err1').style.display='block';return;}
+  const event=document.getElementById('matchEvent').value;
+  if(!date||!type||!sets||!event){document.getElementById('err1').style.display='block';return;}
   entryData={date,type,sets:parseInt(sets),event};
   renderStep2();
 }
