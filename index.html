@@ -6,8 +6,8 @@
 <title>OPR-Rating Master</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F7F6F9; min-height: 100vh; }
-  .app { max-width: 480px; margin: 0 auto; background: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E2E2E2; min-height: 100vh; }
+  .app { max-width: 480px; margin: 0 auto; background: #E2E2E2; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
   /* Header */
   .header { background: #6C3483; color: white; padding: 14px 20px; display: flex; align-items: center; gap: 12px; min-height: 56px; }
@@ -15,13 +15,13 @@
   .back-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0; }
 
   /* Screens */
-  .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #fff; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+  .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #E2E2E2; display: flex; flex-direction: column; transition: transform 0.3s ease; }
   .screen.hidden { transform: translateX(100%); }
   .screen.active { transform: translateX(0); }
   .screen-content { flex: 1; overflow-y: auto; padding: 16px; }
 
   /* Home */
-  .home-hero { background: #F7F6F9; padding: 16px 16px 0; text-align: center; }
+  .home-hero { background: #E2E2E2; padding: 16px 16px 0; text-align: center; }
   .screen-content.home-content { padding-top: 8px; }
   .home-hero .hero-logo-panel { width: 100%; background: #6C3483; border-radius: 14px; padding: 22px 16px 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #fff; }
   .home-hero .ball-row { display: flex; align-items: center; justify-content: center; gap: 22px; }
@@ -47,9 +47,12 @@
 
   /* Ladder */
   .ladder-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 480px; }
-  .ladder-table th { background: #6C3483; color: white; padding: 8px 6px; text-align: left; font-size: 11px; font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
-  .ladder-table td { padding: 7px 6px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; text-align: left; }
+  .ladder-table th { background: #6C3483; color: white; padding: 8px 6px; text-align: center; font-size: 11px; font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
+  .ladder-table th:first-child { text-align: left; }
+  .ladder-table td { padding: 7px 6px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; text-align: center; }
+  .ladder-table td:first-child { text-align: left; }
   .ladder-table tr:nth-child(even) td { background: #F5EEF8; }
+  .ladder-table tr.division-row td { background: #6C3483; color: #fff; font-weight: 700; font-size: 12px; text-align: left; padding: 9px 8px; }
   .rank-badge { background: #6C3483; color: white; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
   .rank-1 { background: #F1C40F; color: #1a1a1a; }
   .rank-2 { background: #BDC3C7; color: #1a1a1a; }
@@ -205,6 +208,7 @@
       <h1>Ladders</h1>
     </div>
     <div class="screen-content">
+      <div style="background:#6C3483;color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:15px;font-weight:700;text-align:center;letter-spacing:0.3px;">Overall Ladder Standings</div>
       <div class="ladders-group-title">Singles Ladders</div>
       <div class="ladders-grid">
         <button class="menu-btn" onclick="loadLadder('mens','Mens Ladder')">Men's Ladder</button>
@@ -509,6 +513,14 @@ async function loadTournamentSheet(sheetId, gid, title) {
     headers.forEach(h=>{html+=`<th>${h}</th>`;});
     html+='</tr></thead><tbody>';
     data.forEach(row=>{
+      // Detect a division/section header row: first cell has text, but the data columns are empty
+      const firstCell=(row[0]||'').trim();
+      const restEmpty=row.slice(1).every(c=>!c||c.trim()==='');
+      const isDivision = firstCell!=='' && restEmpty && isNaN(parseInt(firstCell));
+      if(isDivision){
+        html+=`<tr class="division-row"><td colspan="${headers.length}">${firstCell}</td></tr>`;
+        return;
+      }
       html+='<tr>';
       row.forEach((cell,ci)=>{
         if(ci===0){
