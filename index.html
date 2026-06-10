@@ -383,6 +383,7 @@
 
 <script>
 const SHEET_ID = '1xaF1ng5jUVYDlKzkvww7HCqhGst5FB88aHSxzbeBZZs';
+const CONTROL_PANEL_ID = '1ovzVW-09Csal08HBARWlZ2ZC2uRKj_Uqrvf879Qc8AA';
 const MASTER_PIN = '1963';
 // PIN_GIDS: gids for Men and Ladies DATA sheets (not wall sheets)
 // Andre: replace MEN_GID and LADIES_GID with actual sheet tab gids
@@ -648,6 +649,11 @@ async function renderStep1(){
   setStep(1);
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('entryContent').innerHTML=`
+    <div class="field"><label>Event</label>
+      <select id="matchEvent">
+        <option value="Social">Social</option>
+      </select>
+    </div>
     <div class="field"><label>Date</label><input type="date" id="matchDate" value="${today}"></div>
     <div class="field"><label>Match Type</label>
       <select id="matchType">
@@ -668,6 +674,28 @@ async function renderStep1(){
     </div>
     <div id="err1" class="error-msg">Please fill in all fields.</div>
     <button class="btn btn-primary" onclick="step1Next()">Next: Enter Player Names &rarr;</button>`;
+  loadActiveTournaments();
+}
+
+async function loadActiveTournaments(){
+  try{
+    const url=`https://docs.google.com/spreadsheets/d/${CONTROL_PANEL_ID}/export?format=csv&gid=0`;
+    const r=await fetch(url);
+    const text=await r.text();
+    const rows=text.trim().split('\n').map(r=>parseCSV(r));
+    const sel=document.getElementById('matchEvent');
+    if(!sel) return;
+    // Control Panel: names in col A (index 0), Active checkbox in col B (index 1), data from row 3 (index 2)
+    rows.slice(2).forEach(row=>{
+      const name=(row[0]||'').trim();
+      const active=(row[1]||'').trim().toUpperCase();
+      if(name!=='' && active==='TRUE'){
+        const o=document.createElement('option');
+        o.value=name; o.textContent=name;
+        sel.appendChild(o);
+      }
+    });
+  }catch(e){ /* if it fails, dropdown still has Social */ }
 }
 
 // Store recent matches globally for tap-to-expand
@@ -753,8 +781,9 @@ function step1Next(){
   const date=document.getElementById('matchDate').value;
   const type=document.getElementById('matchType').value;
   const sets=document.getElementById('setsPlayed').value;
+  const event=document.getElementById('matchEvent').value||'Social';
   if(!date||!type||!sets){document.getElementById('err1').style.display='block';return;}
-  entryData={date,type,sets:parseInt(sets)};
+  entryData={date,type,sets:parseInt(sets),event};
   renderStep2();
 }
 
