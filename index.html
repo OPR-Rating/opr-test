@@ -687,6 +687,7 @@ async function loadActiveTournaments(){
     const sel=document.getElementById('matchEvent');
     if(!sel) return;
     // Control Panel: names in col A (index 0), Active checkbox in col B (index 1), data from row 3 (index 2)
+    let activeCount=0;
     rows.slice(2).forEach(row=>{
       const name=(row[0]||'').trim();
       const active=(row[1]||'').trim().toUpperCase();
@@ -694,9 +695,16 @@ async function loadActiveTournaments(){
         const o=document.createElement('option');
         o.value=name; o.textContent=name;
         sel.appendChild(o);
+        activeCount++;
       }
     });
-  }catch(e){ /* if it fails, dropdown still has Social */ }
+    // Smart default: if no tournaments active, pre-select Social (frictionless).
+    // If tournaments are active, leave on "Select event..." to force a conscious choice.
+    if(activeCount===0){ sel.value='Social'; }
+  }catch(e){ /* if it fails, dropdown still has Select event / Social; default to Social for safety */
+    const sel=document.getElementById('matchEvent');
+    if(sel) sel.value='Social';
+  }
 }
 
 // Store recent matches globally for tap-to-expand
