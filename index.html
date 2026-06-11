@@ -1139,7 +1139,7 @@ function closePlayerModal() {
   _currentModalTarget = null;
 }
 
-window.onload=async function(){await loadPlayers();loadRecent();};
+window.onload=function(){ loadRecent(); loadPlayers(); };
 </script>
 </body>
 </html>
